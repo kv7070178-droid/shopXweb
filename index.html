@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>shopX — Online Shopping (Demo)</title>
+<meta name="description" content="shopX is a learning-project demo of a full e-commerce shopping flow. No real payments are processed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="main.js" defer></script>
+<script src="auth.js" defer></script>
+<script src="cart.js" defer></script>
+<script src="checkout.js" defer></script>
+<script src="products.js" defer></script>
+<script src="wishlist.js" defer></script>
+<link rel="stylesheet" href="README.md">
+</head>
+
+<body>
+
+<!-- ============ MOBILE DRAWER ============ -->
+<div class="drawer-scrim" id="drawer-scrim"></div>
+<nav class="mobile-drawer" id="mobile-drawer" aria-label="Mobile menu">
+  <div class="drawer-head">
+    <span class="logo-word">shopX</span>
+    <button class="icon-btn" id="drawer-close" aria-label="Close menu">✕</button>
+  </div>
+  <button class="drawer-link" data-nav="view-home">Home</button>
+  <button class="drawer-link" data-nav="view-wishlist">Wishlist</button>
+  <button class="drawer-link" data-nav="view-orders">My Orders</button>
+  <button class="drawer-link" id="drawer-auth-link">Login / Signup</button>
+  <p class="drawer-heading">Shop by Category</p>
+  <div id="drawer-categories" class="drawer-categories"></div>
+</nav>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="header-row">
+    <button class="icon-btn only-mobile" id="hamburger-btn" aria-label="Open menu">☰</button>
+
+    <button class="logo" data-nav="view-home">
+      <span class="logo-mark">X</span>
+      <span class="logo-word">shopX</span>
+    </button>
+
+    <nav class="header-nav only-desktop">
+      <button class="header-nav-link" data-nav="view-home">Home</button>
+      <button class="header-nav-link" data-nav="view-wishlist">Wishlist</button>
+      <button class="header-nav-link" data-nav="view-orders">Orders</button>
+    </nav>
+
+    <div class="header-actions">
+      <button class="icon-btn only-desktop" id="account-btn">Login</button>
+      <button class="icon-btn" id="wishlist-btn" data-nav="view-wishlist" aria-label="Wishlist">
+        ♡<span class="badge" id="wishlist-count" hidden>0</span>
+      </button>
+      <button class="icon-btn" id="cart-btn" data-nav="view-cart" aria-label="Cart">
+        🛒<span class="badge" id="cart-count" hidden>0</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="search-row">
+    <span class="search-icon">⌕</span>
+    <input type="search" id="search-input" placeholder="Search for products, brands and categories" aria-label="Search products">
+    <button class="search-clear" id="search-clear-btn" hidden aria-label="Clear search">✕</button>
+  </div>
+</header>
+
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- ============ HOME VIEW ============ -->
+<main class="view" id="view-home">
+
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-eyebrow">Mega Sale</span>
+      <h1 class="hero-title">Up to 90% OFF</h1>
+      <p class="hero-sub">Limited-time offers across Electronics, Fashion, Home &amp; more.</p>
+      <button class="btn btn-primary" id="shop-now-btn" data-nav="view-home">Shop Now</button>
+    </div>
+
+    <div class="hero-countdown-wrap">
+      <p class="countdown-label">Sale ends in</p>
+      <div class="countdown" id="hero-countdown">
+        <div class="cd-cell"><span id="hero-dd">02</span><small>days</small></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-cell"><span id="hero-hh">10</span><small>hrs</small></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-cell"><span id="hero-mm">35</span><small>min</small></div>
+        <span class="cd-sep">:</span>
+        <div class="cd-cell"><span id="hero-ss">00</span><small>sec</small></div>
+      </div>
+      <p class="countdown-expired" id="hero-expired" hidden>⏰ This sale window has ended. Check back for the next one!</p>
+    </div>
+  </section>
+
+  <nav class="category-tabs" id="category-tabs" aria-label="Product categories"></nav>
+
+  <section class="deals-section">
+    <h2 class="section-heading">🔥 Deals of the Day</h2>
+    <div class="deals-strip" id="deals-strip"></div>
+  </section>
+
+  <section class="filter-bar">
+    <select id="sort-select" aria-label="Sort products">
+      <option value="featured">Featured</option>
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+      <option value="rating-desc">Highest Rated</option>
+      <option value="discount-desc">Biggest Discount</option>
+    </select>
+    <input type="number" id="price-min" placeholder="Min ₹" aria-label="Minimum price">
+    <input type="number" id="price-max" placeholder="Max ₹" aria-label="Maximum price">
+    <select id="rating-select" aria-label="Minimum rating">
+      <option value="">Any Rating</option>
+      <option value="4">4★ &amp; above</option>
+      <option value="4.3">4.3★ &amp; above</option>
+    </select>
+    <button class="btn btn-outline btn-sm" id="clear-filters-btn">Clear Filters</button>
+  </section>
+
+  <p class="results-meta" id="results-meta"></p>
+  <section class="product-grid" id="product-grid" aria-live="polite"></section>
+  <p class="empty-state" id="empty-state" hidden>No products found.<br>Try searching for something else.</p>
+</main>
+
+<!-- ============ PRODUCT DETAIL VIEW ============ -->
+<main class="view" id="view-product" hidden>
+  <button class="back-btn" data-nav="view-home">← Back to products</button>
+
+  <div class="pd-layout">
+    <div class="pd-gallery" id="pd-gallery"></div>
+
+    <div class="pd-info">
+      <p class="pd-category" id="pd-category"></p>
+      <h1 class="pd-title" id="pd-title"></h1>
+      <div class="pd-rating" id="pd-rating"></div>
+      <div class="price-block-lg" id="pd-price-block"></div>
+      <div id="pd-stock"></div>
+
+      <ul class="trust-list">
+        <li>✓ Free Delivery</li>
+        <li>✓ 7 Days Replacement</li>
+        <li>✓ Secure Payment</li>
+      </ul>
+
+      <div class="qty-row">
+        <span>Quantity:</span>
+        <button class="qty-btn" id="pd-qty-dec">−</button>
+        <span class="qty-value" id="pd-qty-value">1</span>
+        <button class="qty-btn" id="pd-qty-inc">+</button>
+      </div>
+
+      <div class="pd-actions">
+        <button class="btn btn-outline" id="pd-add-cart">Add to Cart</button>
+        <button class="btn btn-primary" id="pd-buy-now">Buy Now</button>
+      </div>
+      <button class="wishlist-text-btn" id="pd-wishlist-btn">♡ Add to Wishlist</button>
+
+      <h2 class="section-heading">Description</h2>
+      <p class="pd-description" id="pd-description"></p>
+
+      <h2 class="section-heading">Features</h2>
+      <ul class="features-list" id="pd-features"></ul>
+    </div>
+  </div>
+</main>
+
+<!-- ============ CART VIEW ============ -->
+<main class="view" id="view-cart" hidden>
+  <button class="back-btn" data-nav="view-home">← Continue shopping</button>
+  <h1 class="page-title">My Cart</h1>
+
+  <div id="cart-items"></div>
+  <p class="empty-state" id="cart-empty" hidden>Your cart is empty.</p>
+
+  <div class="summary-card" id="cart-summary" hidden>
+    <div class="summary-row"><span>Subtotal</span><span id="sum-subtotal"></span></div>
+    <div class="summary-row"><span>Discount</span><span id="sum-discount"></span></div>
+    <div class="summary-row"><span>Delivery</span><span id="sum-shipping"></span></div>
+    <div class="summary-row summary-total"><span>Total</span><span id="sum-total"></span></div>
+    <button class="btn btn-primary btn-block" id="checkout-btn">Proceed to Checkout</button>
+  </div>
+</main>
+
+<!-- ============ WISHLIST VIEW ============ -->
+<main class="view" id="view-wishlist" hidden>
+  <button class="back-btn" data-nav="view-home">← Continue shopping</button>
+  <h1 class="page-title">My Wishlist</h1>
+  <section class="product-grid" id="wishlist-grid"></section>
+  <p class="empty-state" id="wishlist-empty" hidden>Your wishlist is empty. Tap the heart on any product to save it here.</p>
+</main>
+
+<!-- ============ LOGIN VIEW ============ -->
+<main class="view" id="view-login" hidden>
+  <div class="auth-card">
+    <h1 class="page-title">Login</h1>
+    <p class="auth-note">Demo authentication only — accounts are stored in this browser, not on a server.</p>
+    <p class="form-error" id="login-error" hidden></p>
+    <form id="login-form" class="form-stack">
+      <label>Email<input type="email" id="login-email" required></label>
+      <label>Password<input type="password" id="login-password" required minlength="4"></label>
+      <button type="submit" class="btn btn-primary btn-block">Login</button>
+    </form>
+    <p class="auth-switch">Don't have an account? <button id="goto-signup">Create Account</button></p>
+  </div>
+</main>
+
+<!-- ============ SIGNUP VIEW ============ -->
+<main class="view" id="view-signup" hidden>
+  <div class="auth-card">
+    <h1 class="page-title">Create Account</h1>
+    <p class="auth-note">Demo authentication only — accounts are stored in this browser, not on a server.</p>
+    <p class="form-error" id="signup-error" hidden></p>
+    <form id="signup-form" class="form-stack">
+      <label>Full name<input type="text" id="signup-name" required></label>
+      <label>Email<input type="email" id="signup-email" required></label>
+      <label>Mobile number<input type="tel" id="signup-mobile" pattern="[0-9]{10}" placeholder="10-digit number" required></label>
+      <label>Password<input type="password" id="signup-password" required minlength="4"></label>
+      <label>Confirm password<input type="password" id="signup-confirm" required minlength="4"></label>
+      <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+    </form>
+    <p class="auth-switch">Already have an account? <button id="goto-login">Login</button></p>
+  </div>
+</main>
+
+<!-- ============ CHECKOUT VIEW ============ -->
+<main class="view" id="view-checkout" hidden>
+  <button class="back-btn" data-nav="view-cart">← Back to cart</button>
+
+  <div class="stepper" id="checkout-stepper">
+    <div class="step active" data-step="1"><span class="step-dot">1</span>Address</div>
+    <div class="step" data-step="2"><span class="step-dot">2</span>Review</div>
+    <div class="step" data-step="3"><span class="step-dot">3</span>Payment</div>
+  </div>
+
+  <section class="checkout-step" id="step-address">
+    <h2 class="section-heading">Delivery information</h2>
+    <form id="address-form" class="form-grid">
+      <label>Full name<input type="text" id="addr-name" required></label>
+      <label>Mobile number<input type="tel" id="addr-phone" required pattern="[0-9]{10}" placeholder="10-digit number"></label>
+      <label class="span-2">Address<input type="text" id="addr-line" required></label>
+      <label>City<input type="text" id="addr-city" required></label>
+      <label>State<input type="text" id="addr-state" required></label>
+      <label>PIN code<input type="text" id="addr-pin" required pattern="[0-9]{6}" placeholder="6-digit PIN"></label>
+      <button type="submit" class="btn btn-primary span-2">Continue to Review</button>
+    </form>
+  </section>
+
+  <section class="checkout-step" id="step-review" hidden>
+    <h2 class="section-heading">Order summary</h2>
+    <div id="review-items"></div>
+    <div class="summary-card">
+      <div class="summary-row"><span>Subtotal</span><span id="rev-subtotal"></span></div>
+      <div class="summary-row"><span>Discount</span><span id="rev-discount"></span></div>
+      <div class="summary-row"><span>Delivery</span><span id="rev-shipping"></span></div>
+      <div class="summary-row summary-total"><span>Total</span><span id="rev-total"></span></div>
+    </div>
+    <h2 class="section-heading">Deliver to</h2>
+    <p class="address-preview" id="review-address"></p>
+    <button class="btn btn-outline btn-sm" id="review-edit-address">Edit address</button>
+    <button class="btn btn-primary btn-block" id="review-continue">Continue to Payment</button>
+  </section>
+
+  <section class="checkout-step" id="step-payment" hidden>
+    <h2 class="section-heading">Payment method</h2>
+    <p class="mock-note">This is a simulated checkout for a learning project — no real payment is collected, transmitted, or stored.</p>
+    <p class="form-error" id="pay-error" hidden></p>
+
+    <div class="pay-options" id="pay-options">
+      <label class="pay-option">
+        <input type="radio" name="pay-method" value="upi" checked>
+        <span>UPI</span>
+      </label>
+      <label class="pay-option">
+        <input type="radio" name="pay-method" value="card">
+        <span>Credit / Debit Card</span>
+      </label>
+      <label class="pay-option">
+        <input type="radio" name="pay-method" value="demo">
+        <span>Demo Payment</span>
+      </label>
+      <label class="pay-option">
+        <input type="radio" name="pay-method" value="cod">
+        <span>Cash on Delivery</span>
+      </label>
+    </div>
+
+    <div class="pay-detail" id="pay-detail-upi">
+      <label>UPI ID<input type="text" id="upi-id" placeholder="yourname@bank"></label>
+    </div>
+    <div class="pay-detail" id="pay-detail-card" hidden>
+      <label>Card number<input type="text" id="card-number" placeholder="4242 4242 4242 4242" maxlength="19"></label>
+      <div class="form-grid">
+        <label>Expiry<input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5"></label>
+        <label>CVV<input type="text" id="card-cvv" placeholder="123" maxlength="3"></label>
+      </div>
+    </div>
+    <div class="pay-detail" id="pay-detail-demo" hidden>
+      <p class="mock-note">No details needed — this option just simulates a successful payment instantly.</p>
+    </div>
+    <div class="pay-detail" id="pay-detail-cod" hidden>
+      <p class="mock-note">Pay in cash when your order arrives.</p>
+    </div>
+
+    <button class="btn btn-primary btn-block" id="pay-btn">Pay <span id="pay-amount"></span></button>
+  </section>
+</main>
+
+<!-- ============ ORDERS VIEW ============ -->
+<main class="view" id="view-orders" hidden>
+  <button class="back-btn" data-nav="view-home">← Continue shopping</button>
+  <h1 class="page-title">My Orders</h1>
+  <div id="orders-list"></div>
+  <p class="empty-state" id="orders-empty" hidden>You haven't placed any orders yet.</p>
+</main>
+
+<!-- ============ SUCCESS VIEW ============ -->
+<main class="view" id="view-success" hidden>
+  <div class="result-card">
+    <div class="result-icon">✓</div>
+    <h1 class="result-title" id="result-title"></h1>
+    <p class="result-sub" id="result-sub"></p>
+    <p class="order-id-display" id="order-id-display"></p>
+    <p class="dim" id="result-delivery"></p>
+    <div class="result-actions">
+      <button class="btn btn-outline" id="result-view-orders-btn">View Orders</button>
+      <button class="btn btn-primary" id="result-continue-btn">Continue Shopping</button>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div>
+      <p class="footer-heading">About</p>
+      <p>About Us</p><p>Contact</p><p>Careers</p>
+    </div>
+    <div>
+      <p class="footer-heading">Customer Support</p>
+      <p>Help Center</p><p>Returns</p><p>Shipping</p><p>Cancellation</p>
+    </div>
+    <div>
+      <p class="footer-heading">Policies</p>
+      <p>Privacy Policy</p><p>Terms</p><p>Refund Policy</p>
+    </div>
+    <div>
+      <p class="footer-heading">Social</p>
+      <p>Instagram</p><p>YouTube</p><p>Facebook</p><p>X</p>
+    </div>
+  </div>
+  <p class="footer-note">shopX is a fictional demo storefront built for a college/learning project. No real products are sold and no payments are processed.</p>
+  <p class="footer-copy">© 2026 shopX. All Rights Reserved.</p>
+</footer>
+
+<script src="js/products.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/wishlist.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/checkout.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
