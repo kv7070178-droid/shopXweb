@@ -1,54 +1,202 @@
 /* ===========================================================
    shopX — js/auth.js
-   SIMULATED authentication for demo purposes only.
+   Firebase Authentication
+=========================================================== */
 
-   IMPORTANT: This stores account info in plain text in the
-   browser's localStorage. That is fine for a college/portfolio
-   demo where nobody is entering a real password, but it is NOT
-   how real authentication works — a real system hashes passwords
-   server-side, never stores them in the browser, and never trusts
-   the client to say "I'm logged in." Do not reuse this pattern
-   for anything that handles real user data.
-   =========================================================== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 
-const USERS_KEY = "shopX_users";
-const SESSION_KEY = "shopX_session";
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
-function readUsers() {
+
+// ===========================================================
+// FIREBASE CONFIG
+// ===========================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBUAJAWIAjU16NdSmX50YgiElXSl_EMqqY",
+  authDomain: "shopx-de469.firebaseapp.com",
+  projectId: "shopx-de469",
+  storageBucket: "shopx-de469.firebasestorage.app",
+  messagingSenderId: "327954449866",
+  appId: "1:327954449866:web:268c6daec7e054102ffb33",
+  measurementId: "G-C6PZ40FVR2"
+};
+
+
+// ===========================================================
+// INITIALIZE FIREBASE
+// ===========================================================
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const googleProvider = new GoogleAuthProvider();
+
+
+// ===========================================================
+// CURRENT USER
+// ===========================================================
+
+let user = null;
+
+onAuthStateChanged(auth, (firebaseUser) => {
+  user = firebaseUser;
+
+  // Let the rest of the website know authentication changed
+  window.dispatchEvent(
+    new CustomEvent("shopx-auth-change", {
+      detail: firebaseUser
+    })
+  );
+});
+
+
+// ===========================================================
+// GOOGLE LOGIN
+// ===========================================================
+
+async function loginWithGoogle() {
   try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  } catch {
-    return [];
+    const result = await signInWithPopup(auth, googleProvider);
+
+    const firebaseUser = result.user;
+
+    console.log("Google login successful");
+
+    console.log({
+      uid: firebaseUser.uid,
+      name: firebaseUser.displayName,
+      email: firebaseUser.email,
+      photo: firebaseUser.photoURL
+    });
+
+    return {
+      ok: true,
+      user: firebaseUser
+    };
+
+  } catch (error) {
+
+    console.error("Google login failed:", error);
+
+    return {
+      ok: false,
+      error: getAuthError(error)
+    };
   }
 }
-function writeUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+
+// ===========================================================
+// LOGOUT
+// ===========================================================
+
+async function logout() {
+  try {
+
+    await signOut(auth);
+
+    return {
+      ok: true
+    };
+
+  } catch (error) {
+
+    console.error("Logout failed:", error);
+
+    return {
+      ok: false,
+      error: error.message
+    };
+  }
 }
+
+
+// ===========================================================
+// GET CURRENT USER
+// ===========================================================
 
 function currentUser() {
-  const email = localStorage.getItem(SESSION_KEY);
-  if (!email) return null;
-  return readUsers().find((u) => u.email === email) || null;
+  return auth.currentUser;
 }
 
-function signup({ name, email, mobile, password }) {
-  const users = readUsers();
-  if (users.some((u) => u.email === email)) {
-    return { ok: false, error: "An account with this email already exists." };
+
+// ===========================================================
+// AUTH ERROR HANDLING
+// ===========================================================
+
+function getAuthError(error) {
+
+  switch (error.code) {
+
+    case "auth/popup-closed-by-user":
+      return "Login window was closed.";
+
+    case "auth/popup-blocked":
+      return "Your browser blocked the Google login popup.";
+
+    case "auth/cancelled-popup-request":
+      return "Another login window is already open.";
+
+    case "auth/network-request-failed":
+      return "Network error. Check your internet connection.";
+
+    default:
+      return error.message || "Google login failed.";
   }
-  users.push({ name, email, mobile, password }); // demo only — never store real passwords like this
-  writeUsers(users);
-  localStorage.setItem(SESSION_KEY, email);
-  return { ok: true };
 }
+import {
+  loginWithGoogle,
+  logout,
+  currentUser
+  
+} from "./auth.js";
 
-function login({ email, password }) {
-  const user = readUsers().find((u) => u.email === email && u.password === password);
-  if (!user) return { ok: false, error: "Incorrect email or password." };
-  localStorage.setItem(SESSION_KEY, email);
-  return { ok: true };
-}
 
-function logout() {
-  localStorage.removeItem(SESSION_KEY);
-}
+const accountBtn = document.getElementById("account-btn");
+
+accountBtn.addEventListener("click", async () => {
+
+  const user = currentUser();
+
+  // Already logged in
+  if (user) {
+
+    const result = await logout();
+
+    if (!result.ok) {
+      alert(result.error);
+    }
+
+    return;
+  }
+
+
+  // Not logged in → Google login
+  const result = await loginWithGoogle();
+
+  if (!result.ok) {
+    alert(result.error);
+    return;
+  }
+
+  console.log("Logged in as:", result.user.displayName);
+});
+
+// ===========================================================
+// EXPORT
+// ===========================================================
+
+export {
+  auth,
+  loginWithGoogle,
+  logout,
+  currentUser
+};
