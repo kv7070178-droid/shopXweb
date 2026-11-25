@@ -110,3 +110,7 @@ protocol, so a local server is the more reliable habit.
   replace the mock checkout with a real payment gateway integration
   (e.g. Razorpay, Stripe) handled server-side, and hash passwords
   server-side instead of storing them in the browser.
+<br>
+END
+
+
